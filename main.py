@@ -1,4 +1,4 @@
-# pip install backtrader
+# pip install backtrader pandas
 # https://finance.yahoo.com/quote/GAZP.ME/history?p=GAZP.ME
 
 from __future__ import (absolute_import, division, print_function,

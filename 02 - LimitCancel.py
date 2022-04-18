@@ -2,6 +2,10 @@ from datetime import datetime, time
 import backtrader as bt
 from BackTraderQuik.QKStore import QKStore  # Хранилище QUIK
 
+from QuikPy import QuikPy  # Работа с QUIK из Python через LUA скрипты QuikSharp
+
+import functions
+
 
 class LimitCancel(bt.Strategy):
     """
@@ -11,6 +15,9 @@ class LimitCancel(bt.Strategy):
     """
     params = (  # Параметры торговой системы
         ('LimitPct', 2),  # Заявка на покупку на n% ниже цены закрытия
+        ('Depo', 0),
+        ('Lot', 0),
+        ('Percent', 2),
     )
 
     def log(self, txt, dt=None):
@@ -33,9 +40,15 @@ class LimitCancel(bt.Strategy):
         if not self.position:  # Если позиции нет
             if self.order and self.order.status == bt.Order.Accepted:  # Если заявка не исполнена (принята брокером)
                 self.cancel(self.order)  # то снимаем ее
-            limitPrice = self.data.close[0] * (1 - self.p.LimitPct / 100)  # На n% ниже цены закрытия
-            limitPrice = 0.020090
-            self.order = self.buy(exectype=bt.Order.Limit, price=limitPrice)  # Лимитная заявка на покупку
+            #limitPrice = self.data.close[0] * (1 - self.p.LimitPct / 100)  # На n% ниже цены закрытия
+            limitPrice = 0.017775
+
+            size, lots_can_buy = functions.calc_size(depo=self.p.Depo, lot=self.p.Lot, percent=self.p.Percent, ticker_price=limitPrice)
+            print(size, lots_can_buy)
+            # 126582.27848101266 12.658227848101266  => 126582 12
+            exit(1) # for real trade please remove it )))
+
+            self.order = self.buy(exectype=bt.Order.Limit, price=limitPrice, size=lots_can_buy)  # Лимитная заявка на покупку
             print("Real trade: open position")
         else:  # Если позиция есть
             self.order = self.close()  # Заявка на закрытие позиции по рыночной цене
@@ -69,6 +82,23 @@ class LimitCancel(bt.Strategy):
 
 
 if __name__ == '__main__':  # Точка входа при запуске этого скрипта
+    qpProvider = QuikPy()  # Вызываем конструктор QuikPy с подключением к локальному компьютеру с QUIK
+    # qpProvider = QuikPy(Host='<Ваш IP адрес>')  # Вызываем конструктор QuikPy с подключением к удаленному компьютеру с QUIK
+
+    firmId = 'MC0063100000'  # Фирма
+    classCode = 'TQBR'  # Класс тикера
+    secCode = 'VTBR'  # Тикер
+
+    # Данные тикера
+    securityInfo = qpProvider.GetSecurityInfo(classCode, secCode)["data"]
+    print(f'Информация о тикере {classCode}.{secCode} ({securityInfo["short_name"]}):')
+    print('Валюта:', securityInfo['face_unit'])
+    print('Кол-во десятичных знаков:', securityInfo['scale'])
+    print('Лот:', securityInfo['lot_size'])
+    print('Шаг цены:', securityInfo['min_price_step'])
+
+    lot = securityInfo['lot_size']
+
     cerebro = bt.Cerebro()  # Инициируем "движок" BackTrader
 
     # open:
@@ -82,10 +112,9 @@ if __name__ == '__main__':  # Точка входа при запуске это
     firmId = 'MC0061900000'  # Код фирмы (присваивается брокером) # Счет L01+00000F00
     tradeAccountId = 'L01+00000F00'
 
-    symbol = 'TQBR.VTBR'
-    #symbol = 'SPBFUT.SiH2'
+    symbol = f'{classCode}.{secCode}'
 
-    cerebro.addstrategy(LimitCancel, LimitPct=1)  # Добавляем торговую систему с лимитным входом в n%
+    cerebro.addstrategy(LimitCancel, LimitPct=1, Depo=2000, Lot=lot, Percent=50)  # Добавляем торговую систему с лимитным входом в n%
     store = QKStore()  # Хранилище QUIK (QUIK на локальном компьютере)
     # store = QKStore(Host='<Ваш IP адрес>')  # Хранилище QUIK (К QUIK на удаленном компьютере обращаемся по IP или названию)
     # broker = store.getbroker(use_positions=False)  # Брокер со счетом по умолчанию (срочный рынок РФ)
@@ -94,5 +123,5 @@ if __name__ == '__main__':  # Точка входа при запуске это
     data = store.getdata(dataname=symbol, timeframe=bt.TimeFrame.Minutes, compression=1,
                          fromdate=datetime(2022, 4, 14), sessionstart=time(7, 0), LiveBars=True)  # Исторические и новые минутные бары за все время
     cerebro.adddata(data)  # Добавляем данные
-    cerebro.addsizer(bt.sizers.FixedSize, stake=10000)  # Кол-во акций для покупки/продажи
+    #cerebro.addsizer(bt.sizers.FixedSize, stake=10000)  # Кол-во акций для покупки/продажи
     cerebro.run()  # Запуск торговой системы

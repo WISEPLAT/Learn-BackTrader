@@ -7,8 +7,9 @@ def calc_size(depo, lot, percent, ticker_price):
     ticker_price - по какой цене считаем размер позиции
     """
     money = depo * percent / 100
-    cost_lot = lot *ticker_price
+    cost_lot = lot * ticker_price
     shares_can_buy = money / cost_lot
-    size = shares_can_buy * lot     # размер не кратный lot
-    size = int(size / lot) * lot    # размер кратный lot
+    size_mod = shares_can_buy * lot     # размер не кратный lot
+    size = round(size_mod / lot) * lot    # размер кратный lot
+    print(money, cost_lot, shares_can_buy, size_mod, size)
     return int(size), int(shares_can_buy)

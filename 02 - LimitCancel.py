@@ -41,14 +41,17 @@ class LimitCancel(bt.Strategy):
             if self.order and self.order.status == bt.Order.Accepted:  # Если заявка не исполнена (принята брокером)
                 self.cancel(self.order)  # то снимаем ее
             #limitPrice = self.data.close[0] * (1 - self.p.LimitPct / 100)  # На n% ниже цены закрытия
-            limitPrice = 0.017775
+            #limitPrice = 0.017075   # VTBR
+            limitPrice = 117.07     # SBER
 
             size, lots_can_buy = functions.calc_size(depo=self.p.Depo, lot=self.p.Lot, percent=self.p.Percent, ticker_price=limitPrice)
             print(size, lots_can_buy)
             # 126582.27848101266 12.658227848101266  => 126582 12
+            # close: # 121.36 1000.0 1177.7 0.8491126772522714 8.491126772522714 10
+            # close: 0.018605 # 1000.0 177.75 5.625879043600563 56258.79043600563 60000
             exit(1) # for real trade please remove it )))
 
-            self.order = self.buy(exectype=bt.Order.Limit, price=limitPrice, size=lots_can_buy)  # Лимитная заявка на покупку
+            self.order = self.buy(exectype=bt.Order.Limit, price=limitPrice, size=size)  # Лимитная заявка на покупку
             print("Real trade: open position")
         else:  # Если позиция есть
             self.order = self.close()  # Заявка на закрытие позиции по рыночной цене
@@ -87,7 +90,8 @@ if __name__ == '__main__':  # Точка входа при запуске это
 
     firmId = 'MC0063100000'  # Фирма
     classCode = 'TQBR'  # Класс тикера
-    secCode = 'VTBR'  # Тикер
+    #secCode = 'VTBR'  # Тикер
+    secCode = 'SBER'  # Тикер
 
     # Данные тикера
     securityInfo = qpProvider.GetSecurityInfo(classCode, secCode)["data"]
@@ -121,7 +125,7 @@ if __name__ == '__main__':  # Точка входа при запуске это
     broker = store.getbroker(use_positions=False, ClientCode=clientCode, ClientCodeTerminal=clientCodeTerminal, FirmId=firmId, TradeAccountId=tradeAccountId, LimitKind=2, CurrencyCode='SUR', IsFutures=False)  # Брокер со счетом фондового рынка РФ
     cerebro.setbroker(broker)  # Устанавливаем брокера
     data = store.getdata(dataname=symbol, timeframe=bt.TimeFrame.Minutes, compression=1,
-                         fromdate=datetime(2022, 4, 14), sessionstart=time(7, 0), LiveBars=True)  # Исторические и новые минутные бары за все время
+                         fromdate=datetime(2022, 4, 18), sessionstart=time(7, 0), LiveBars=True)  # Исторические и новые минутные бары за все время
     cerebro.adddata(data)  # Добавляем данные
     #cerebro.addsizer(bt.sizers.FixedSize, stake=10000)  # Кол-во акций для покупки/продажи
     cerebro.run()  # Запуск торговой системы

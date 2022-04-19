@@ -41,8 +41,9 @@ class LimitCancel(bt.Strategy):
             if self.order and self.order.status == bt.Order.Accepted:  # Если заявка не исполнена (принята брокером)
                 self.cancel(self.order)  # то снимаем ее
             #limitPrice = self.data.close[0] * (1 - self.p.LimitPct / 100)  # На n% ниже цены закрытия
-            #limitPrice = 0.017075   # VTBR
-            limitPrice = 117.07     # SBER
+            limitPrice = 0.017075   # VTBR
+            #limitPrice = 0.021075  # VTBR
+            #limitPrice = 117.07     # SBER
 
             size, lots_can_buy = functions.calc_size(depo=self.p.Depo, lot=self.p.Lot, percent=self.p.Percent, ticker_price=limitPrice)
             print(size, lots_can_buy)
@@ -52,9 +53,10 @@ class LimitCancel(bt.Strategy):
             exit(1) # for real trade please remove it )))
 
             self.order = self.buy(exectype=bt.Order.Limit, price=limitPrice, size=size)  # Лимитная заявка на покупку
+            #self.order = self.sell(exectype=bt.Order.Limit, price=limitPrice, size=10000)  # Лимитная заявка на покупку
             print("Real trade: open position")
         else:  # Если позиция есть
-            self.order = self.close()  # Заявка на закрытие позиции по рыночной цене
+            #self.order = self.close()  # Заявка на закрытие позиции по рыночной цене
             print("Real trade: close position")
 
     def notify_data(self, data, status, *args, **kwargs):
@@ -85,25 +87,6 @@ class LimitCancel(bt.Strategy):
 
 
 if __name__ == '__main__':  # Точка входа при запуске этого скрипта
-    qpProvider = QuikPy()  # Вызываем конструктор QuikPy с подключением к локальному компьютеру с QUIK
-    # qpProvider = QuikPy(Host='<Ваш IP адрес>')  # Вызываем конструктор QuikPy с подключением к удаленному компьютеру с QUIK
-
-    firmId = 'MC0063100000'  # Фирма
-    classCode = 'TQBR'  # Класс тикера
-    #secCode = 'VTBR'  # Тикер
-    secCode = 'SBER'  # Тикер
-
-    # Данные тикера
-    securityInfo = qpProvider.GetSecurityInfo(classCode, secCode)["data"]
-    print(f'Информация о тикере {classCode}.{secCode} ({securityInfo["short_name"]}):')
-    print('Валюта:', securityInfo['face_unit'])
-    print('Кол-во десятичных знаков:', securityInfo['scale'])
-    print('Лот:', securityInfo['lot_size'])
-    print('Шаг цены:', securityInfo['min_price_step'])
-
-    lot = securityInfo['lot_size']
-
-    cerebro = bt.Cerebro()  # Инициируем "движок" BackTrader
 
     # open:
     # clientCode = 'XXX'  # Код клиента (присваивается брокером)
@@ -115,6 +98,49 @@ if __name__ == '__main__':  # Точка входа при запуске это
     clientCodeTerminal = 'FZQU251223A'  # Код клиента (присваивается брокером) # номер терминала @
     firmId = 'MC0061900000'  # Код фирмы (присваивается брокером) # Счет L01+00000F00
     tradeAccountId = 'L01+00000F00'
+
+    qpProvider = QuikPy()  # Вызываем конструктор QuikPy с подключением к локальному компьютеру с QUIK
+    # qpProvider = QuikPy(Host='<Ваш IP адрес>')  # Вызываем конструктор QuikPy с подключением к удаленному компьютеру с QUIK
+
+    classCode = 'TQBR'  # Класс тикера
+    secCode = 'VTBR'  # Тикер
+    #secCode = 'SBER'  # Тикер
+
+    limitKind = 2
+
+    # Данные тикера
+    securityInfo = qpProvider.GetSecurityInfo(classCode, secCode)["data"]
+    print(f'Информация о тикере {classCode}.{secCode} ({securityInfo["short_name"]}):')
+    print('Валюта:', securityInfo['face_unit'])
+    print('Кол-во десятичных знаков:', securityInfo['scale'])
+    print('Лот:', securityInfo['lot_size'])
+    print('Шаг цены:', securityInfo['min_price_step'])
+
+    lot = securityInfo['lot_size']
+
+    # берем позиции по бумагам
+    depoLimits = qpProvider.GetAllDepoLimits()['data']  # Все лимиты по бумагам (позиции по инструментам)
+    # {'firmid': 'MC0061900000', 'openlimit': 0.0, 'currentlimit': 0.0, 'wa_position_price': 0.02011,
+    # 'currentbal': 20000.0, 'limit_kind': 2, 'locked_buy_value': 0.0, 'locked_sell': 0.0, 'openbal': 20000.0,
+    # 'locked_sell_value': 0.0, 'awg_position_price': 0.02011, 'locked_buy': 0.0, 'sec_code': 'VTBR',
+    # 'trdaccid': 'L01+00000F00', 'client_code': '593458R8NYF'}
+    accountDepoLimits = [depoLimit for depoLimit in depoLimits  # Бумажный лимит
+                         if depoLimit['client_code'] == clientCode and  # Выбираем по коду клиента
+                         depoLimit['firmid'] == firmId and  # Фирме
+                         depoLimit['limit_kind'] == limitKind and  # Дню лимита
+                         depoLimit['currentbal'] != 0]  # Берем только открытые позиции по фирме и дню
+    for firmKindDepoLimit in accountDepoLimits:  # Пробегаемся по всем позициям
+        secCode = firmKindDepoLimit["sec_code"]  # Код тикера
+        entryPrice = float(firmKindDepoLimit["wa_position_price"])
+        #classCode = qpProvider.GetSecurityClass(classCodes, secCode)['data']
+        lastPrice = float(
+            qpProvider.GetParamEx(classCode, secCode, 'LAST')['data']['param_value'])  # Последняя цена сделки
+        # if classCode == 'TQOB':  # Для рынка облигаций
+        #     lastPrice *= 10  # Умножаем на 10
+        print(f'- Позиция {classCode}.{secCode} {firmKindDepoLimit["currentbal"]} @ {entryPrice:.2f}/{lastPrice:.2f}')
+
+
+    cerebro = bt.Cerebro()  # Инициируем "движок" BackTrader
 
     symbol = f'{classCode}.{secCode}'
 

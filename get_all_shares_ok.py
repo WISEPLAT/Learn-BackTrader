@@ -72,16 +72,20 @@ if __name__ == '__main__':
      'VKCO', 'VLHZ', 'VRSB', 'VRSBP', 'VSMO', 'VSYD', 'VSYDP', 'VTBR', 'WTCM', 'WTCMP', 'YAKG', 'YKEN', 'YKENP', 'YNDX',
      'YRSBP', 'ZILL', 'ZVEZ']
 
-    for ticker in classSecurities:
-        prefix = classCode + '.'
-        timeframe = "W1"
-        how_many_bars = 50000
+    classSecurities = ['ROSN', 'SBER', 'GAZP', 'VTBR']
 
+    classSecurities = ['IRAO', 'RTKM', 'TRMK']
+
+    prefix = classCode + '.'
+    timeframe = "D1"
+    how_many_bars = 50000
+
+    for ticker in classSecurities:
         try:
             # create CSV file
             load_data.ExportToCsvFromMetatrader(ticker=ticker, timeframe=timeframe, utc_till=utc_till,
-                                                how_many_bars=how_many_bars, remove_last_bar=False, export_dir="csv",
-                                                prefix=prefix, upper_heading=False)
+                                                how_many_bars=how_many_bars, remove_last_bar=False,
+                                                export_dir="csv_test_mt5", prefix=prefix, upper_heading=False)
             print(ticker, end=" ")
         except:
             print("\n Error with ticker: ", ticker)

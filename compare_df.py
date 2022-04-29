@@ -6,10 +6,15 @@ import finplot as fplt
 timeFrame = "D1"
 classCode = "TQBR"
 classSecurities = ['IRAO', 'RTKM', 'TRMK']
+classSecurities = ['GLTR']
 classSecurities = ['TRMK']
+#classSecurities = ['SBERP']
 
 csv_folder_quik = "csv_test_quik"
 csv_folder_meta = "csv_test_mt5"
+
+csv_folder_quik = "csv"
+csv_folder_meta = "csv"
 
 
 w = fplt.foreground = '#eef'
@@ -49,7 +54,7 @@ if __name__ == '__main__':
         except:
             print("\n Error with ticker: ", secCode)
 
-    data = df_quik
+    data = df_meta
 
     data = data.reset_index()
     data.rename(columns={'datetime': 'Date', 'open': 'Open', 'high': 'High',

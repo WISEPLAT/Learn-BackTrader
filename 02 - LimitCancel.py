@@ -50,7 +50,7 @@ class LimitCancel(bt.Strategy):
             # 126582.27848101266 12.658227848101266  => 126582 12
             # close: # 121.36 1000.0 1177.7 0.8491126772522714 8.491126772522714 10
             # close: 0.018605 # 1000.0 177.75 5.625879043600563 56258.79043600563 60000
-            exit(1) # for real trade please remove it )))
+            #exit(1) # for real trade please remove it )))
 
             self.order = self.buy(exectype=bt.Order.Limit, price=limitPrice, size=size)  # Лимитная заявка на покупку
             #self.order = self.sell(exectype=bt.Order.Limit, price=limitPrice, size=10000)  # Лимитная заявка на покупку

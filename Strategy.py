@@ -1,6 +1,9 @@
 import backtrader as bt
+from collections import defaultdict  # для списков в словарях
+import functions
 
-class PrintStatusAndBars(bt.Strategy):
+
+class TestStrategy01(bt.Strategy):
     """
     - Отображает статус подключения
     - При приходе нового бара отображает его цены/объем
@@ -9,6 +12,8 @@ class PrintStatusAndBars(bt.Strategy):
     params = (  # Параметры торговой системы
         ('name', ''),  # Название торговой системы
         ('symbols', ''),  # Список торгуемых тикеров. По умолчанию торгуем все тикеры
+        ('Percent', 20),
+        ('lots', ''),
     )
 
     def __init__(self):
@@ -19,6 +24,11 @@ class PrintStatusAndBars(bt.Strategy):
         self.order = None
 
         self.dataclose = None
+
+        self.orders_bar_executed = defaultdict(list)
+
+        print(self.p.lots)
+
 
     def log(self, txt, dt=None):
         """Вывод строки с датой на консоль"""
@@ -34,7 +44,7 @@ class PrintStatusAndBars(bt.Strategy):
             lastdatetimes = [bt.num2date(data.datetime[0]) for data in self.datas]  # Дата и время последнего бара каждого тикера
             if lastdatetimes.count(lastdatetimes[0]) != len(lastdatetimes):  # Если дата и время последних баров не идентичны
                 return  # то еще не пришли все новые бары. Ждем дальше, выходим
-            print(self.p.name)
+            #print(self.p.name)
         for data in self.datas:  # Пробегаемся по всем запрошенным тикерам
             if self.p.symbols == '' or data._dataname in self.p.symbols:  # Если торгуем все тикеры или данный тикер
                 self.log(f'{data._dataname} - {bt.TimeFrame.Names[data.p.timeframe]} {data.p.compression} - Open={data.open[0]:.2f}, High={data.high[0]:.2f}, Low={data.low[0]:.2f}, Close={data.close[0]:.2f}, Volume={data.volume[0]:.0f}',
@@ -57,21 +67,31 @@ class PrintStatusAndBars(bt.Strategy):
                         if self.dataclose[-1] < self.dataclose[-2]:
                             # previous close less than the previous close
 
+                            # size, lots_can_buy = functions.calc_size(depo=self.cerebro.broker.get_cash(),
+                            #                                          lot=self.p.lots[self.data._name],
+                            #                                          percent=self.p.Percent,
+                            #                                          ticker_price=self.dataclose[0])
+                            # print(size, lots_can_buy)
+
                             # BUY, BUY, BUY!!! (with default parameters)
                             self.log('BUY CREATE, %.2f' % self.dataclose[0])
 
                             # Keep track of the created order to avoid a 2nd order
-                            self.order = self.buy()
+                            self.order = self.buy(data=data) #, size=size)
 
                 else:
 
                     # Already in the market ... we might sell
-                    if len(self) >= (self.bar_executed + 5):
-                        # SELL, SELL, SELL!!! (with all possible default parameters)
-                        self.log('SELL CREATE, %.2f' % self.dataclose[0])
+                    print(len(self), self.orders_bar_executed[data._name], data._name, self.orders_bar_executed)
+                    try:
+                        if len(self) >= (self.orders_bar_executed[data._name] + 5):
+                            # SELL, SELL, SELL!!! (with all possible default parameters)
+                            self.log('SELL CREATE, %.2f' % self.dataclose[0])
 
-                        # Keep track of the created order to avoid a 2nd order
-                        self.order = self.sell()
+                            # Keep track of the created order to avoid a 2nd order
+                            self.order = self.sell(data=data)
+                    except:
+                        pass
 
     def notify_trade(self, trade):
         if not trade.isclosed:
@@ -94,6 +114,7 @@ class PrintStatusAndBars(bt.Strategy):
                 self.log('SELL EXECUTED, %.2f' % order.executed.price)
 
             self.bar_executed = len(self)
+            self.orders_bar_executed[order.data._name] = len(self)
 
         elif order.status in [order.Canceled, order.Margin, order.Rejected]:
             self.log('Order Canceled/Margin/Rejected')

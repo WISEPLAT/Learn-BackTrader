@@ -1,7 +1,8 @@
 from datetime import datetime
 from backtrader import Cerebro, TimeFrame
 from BackTraderQuik.QKStore import QKStore  # Хранилище QUIK
-import Strategy as ts  # Торговые системы
+# import Strategy_test_MA as ts  # Торговые системы
+import StrategyWOW as ts  # Торговые системы - to check profit
 from QuikPy import QuikPy  # Работа с QUIK из Python через LUA скрипты QuikSharp
 
 if __name__ == '__main__':  # Точка входа при запуске этого скрипта
@@ -38,7 +39,7 @@ if __name__ == '__main__':  # Точка входа при запуске это
     store = QKStore()  # Хранилище QUIK (QUIK на локальном компьютере)
     # store = QKStore(Host='<Ваш IP адрес>')  # Хранилище QUIK (К QUIK на удаленном компьютере обращаемся по IP или названию)
     for symbol in symbols:  # Пробегаемся по всем тикерам
-        data = store.getdata(dataname=symbol, timeframe=TimeFrame.Minutes, compression=15, fromdate=datetime(2021, 10, 4), LiveBars=False)  # Исторические и новые бары по первому тикеру
+        data = store.getdata(dataname=symbol, timeframe=TimeFrame.Days, compression=1, fromdate=datetime(2021, 10, 4), LiveBars=False)  # Исторические и новые бары по первому тикеру
         cerebro.adddata(data, name=symbol)  # Добавляем данные
     #cerebro.addstrategy(ts.TestStrategy01, name="One Ticker", symbols=('TQBR.SBER',))  # Добавляем торговую систему по одному тикеру
     #cerebro.addstrategy(ts.TestStrategy01, name="Two Tickers", symbols=('TQBR.GAZP', 'TQBR.LKOH',))  # Добавляем торговую систему по двум тикерам

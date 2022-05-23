@@ -29,15 +29,6 @@ class TestStrategy01(bt.Strategy):
 
         print(self.p.lots)
 
-        sma1 = bt.indicators.SMA(self.data)
-        ema1 = bt.indicators.EMA(self.data)
-
-        close_over_sma = self.data.close > sma1
-        close_over_ema = self.data.close > ema1
-        sma_ema_diff = sma1 - ema1
-
-        self.buy_sig = bt.And(close_over_sma, close_over_ema, sma_ema_diff > 0)
-
 
     def log(self, txt, dt=None):
         """Вывод строки с датой на консоль"""
@@ -69,29 +60,24 @@ class TestStrategy01(bt.Strategy):
                 # Check if we are in the market
                 if not self.position:
 
-                    print(self.buy_sig)
+                    # Not yet ... we MIGHT BUY if ...
+                    if self.dataclose[0] < self.dataclose[-1]:
+                        # current close less than previous close
 
-                    if self.buy_sig:
-                        self.buy()
+                        if self.dataclose[-1] < self.dataclose[-2]:
+                            # previous close less than the previous close
 
-                    # # Not yet ... we MIGHT BUY if ...
-                    # if self.dataclose[0] < self.dataclose[-1]:
-                    #     # current close less than previous close
-                    #
-                    #     if self.dataclose[-1] < self.dataclose[-2]:
-                    #         # previous close less than the previous close
-                    #
-                    #         # size, lots_can_buy = functions.calc_size(depo=self.cerebro.broker.get_cash(),
-                    #         #                                          lot=self.p.lots[self.data._name],
-                    #         #                                          percent=self.p.Percent,
-                    #         #                                          ticker_price=self.dataclose[0])
-                    #         # print(size, lots_can_buy)
-                    #
-                    #         # BUY, BUY, BUY!!! (with default parameters)
-                    #         self.log('BUY CREATE, %.2f' % self.dataclose[0])
-                    #
-                    #         # Keep track of the created order to avoid a 2nd order
-                    #         self.order = self.buy(data=data) #, size=size)
+                            # size, lots_can_buy = functions.calc_size(depo=self.cerebro.broker.get_cash(),
+                            #                                          lot=self.p.lots[self.data._name],
+                            #                                          percent=self.p.Percent,
+                            #                                          ticker_price=self.dataclose[0])
+                            # print(size, lots_can_buy)
+
+                            # BUY, BUY, BUY!!! (with default parameters)
+                            self.log('BUY CREATE, %.2f' % self.dataclose[0])
+
+                            # Keep track of the created order to avoid a 2nd order
+                            self.order = self.buy(data=data) #, size=size)
 
                 else:
 

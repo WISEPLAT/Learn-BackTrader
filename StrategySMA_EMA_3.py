@@ -73,7 +73,7 @@ class TestStrategy01(bt.Strategy):
                 self.log(f'{ticker} - {bt.TimeFrame.Names[data.p.timeframe]} {data.p.compression} - Open={data.open[0]:.2f}, High={data.high[0]:.2f}, Low={data.low[0]:.2f}, Close={data.close[0]:.2f}, Volume={data.volume[0]:.0f}',
                      bt.num2date(data.datetime[0]))
                 # print("[", ticker, self.sma1[0], self.sma2[0], "]")
-                print("[", ticker, self.sma_all1[ticker][0], self.sma_all2[ticker][0], "]")
+                # print("[", ticker, self.sma_all1[ticker][0], self.sma_all2[ticker][0], "]")
 
 
                 # # https://www.lfd.uci.edu/~gohlke/pythonlibs/#ta-lib
@@ -90,13 +90,13 @@ class TestStrategy01(bt.Strategy):
 
                 if not self.orders[ticker]:
                     if self.sma_all1[ticker][0] > self.sma_all2[ticker][0]:
-                        self.log('BUY CREATE, %.2f' % self.data.close[0])
+                        self.log(f"BUY CREATE [{ticker}] {self.data.close[0]:.2f}")
                         self.buy(data=data, exectype=bt.Order.Market)  # , size=size)
                         self.orders[ticker] = True
 
                 if self.orders[ticker]:
                     if self.sma_all1[ticker][0] < self.sma_all2[ticker][0]:
-                        self.log('SELL CREATE, %.2f' % self.data.close[0])
+                        self.log(f"SELL CREATE [{ticker}] {self.data.close[0]:.2f}")
                         self.sell(data=data, exectype=bt.Order.Market)  # , size=size)
                         self.orders[ticker] = False
 
@@ -118,9 +118,9 @@ class TestStrategy01(bt.Strategy):
         # Attention: broker could reject order if not enough cash
         if order.status in [order.Completed]:
             if order.isbuy():
-                self.log('BUY EXECUTED, %.2f' % order.executed.price)
+                self.log(f"BUY EXECUTED [{order.data._name}], {order.executed.price:.2f}")
             elif order.issell():
-                self.log('SELL EXECUTED, %.2f' % order.executed.price)
+                self.log(f"SELL EXECUTED [{order.data._name}], {order.executed.price:.2f}")
 
             self.bar_executed = len(self)
             self.orders_bar_executed[order.data._name] = len(self)

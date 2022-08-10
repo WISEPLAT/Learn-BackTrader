@@ -12,4 +12,30 @@ def calc_size(depo, lot, percent, ticker_price):
     size_mod = shares_can_buy * lot     # размер не кратный lot
     size = round(size_mod / lot) * lot    # размер кратный lot
     print(money, cost_lot, shares_can_buy, size_mod, size)
-    return int(size), int(shares_can_buy)
+    return size
+
+def get_info_about_paper(qpProvider, symbols, show_log=False):
+    """
+    Функция получения информацию по бумагам:
+    шаг цены, сколько лотов, кол-во десятичных знаков, процент
+    """
+    syminfo_mintick = f_decimal = lots = {}
+    for symbol in symbols:
+        _point = symbol.index('.')
+        classCode = symbol[0:_point]  # Класс тикера
+        secCode = symbol[_point+1:]  # Тикер +1 для точки
+
+        securityInfo = qpProvider.GetSecurityInfo(classCode, secCode)["data"]
+
+        if show_log:
+            print(f'Информация о тикере {classCode}.{secCode} ({securityInfo["short_name"]}):')
+            print('Валюта:', securityInfo['face_unit'])
+            print('Кол-во десятичных знаков:', securityInfo['scale'])
+            print('Лот:', securityInfo['lot_size'])
+            print('Шаг цены:', securityInfo['min_price_step'])
+
+        syminfo_mintick[symbol] = securityInfo['min_price_step']    # сохраняем Шаг цены в глобальной переменной syminfo_mintick
+        f_decimal[symbol] = securityInfo['scale']                   # сохраняем Кол-во десятичных знаков в глобальной переменной f_decimal
+        lots[symbol] = securityInfo['lot_size']                      # сохраняем Лот в глобальной переменной lot
+
+    return syminfo_mintick, f_decimal, lots

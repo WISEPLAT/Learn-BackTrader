@@ -40,6 +40,8 @@ class TestStrategy04(bt.Strategy):
         self.price_buy = defaultdict(list)
         self.size_buy = defaultdict(list)
 
+        self.my_logs = []
+
         for i in range(len(self.datas)):
             ticker = list(self.dnames.keys())[i]    # key name is ticker name
             self.sma_all1[ticker] = bt.indicators.SMA(self.datas[i], period=8)
@@ -53,6 +55,20 @@ class TestStrategy04(bt.Strategy):
         dt = bt.num2date(
             self.datas[0].datetime[0]) if dt is None else dt  # Заданная дата или дата последнего бара первого тикера ТС
         print(f'{dt.strftime("%d.%m.%Y %H:%M")}, {txt}')  # Выводим дату и время с заданным текстом на консоль
+
+    def log_csv(self, ticker=None, signal=None, signal_price=None, order=None, order_price=None,
+                    size=None, status=None, cost=None, comm=None, amount=None, pnl=None, dt=None):
+        """Собираем логи для csv файла"""
+
+        tradedate = bt.num2date(self.datas[0].datetime[0]) if dt is None else dt  # Заданная дата или дата последнего бара первого тикера ТС
+        depo = f"{self.cerebro.broker.get_cash():.2f}"
+        amount = f"{(self.cerebro.broker.get_value()):.2f}"  # - (self.cerebro.broker.get_cash()):.2f}"
+        strategy_name = self.p.name
+        info = ""
+        if order == "BUY" and float(cost) < 0: info = "Warning"
+
+        self.my_logs.append([tradedate, ticker, signal, signal_price, order, order_price, size, status,
+                               cost, comm, pnl, amount, depo, strategy_name, info])
 
     def next(self):
         """
@@ -111,7 +127,6 @@ class TestStrategy04(bt.Strategy):
                 if not self.orders[ticker]:
                     if self.sma_all1[ticker] > self.sma_all2[ticker]:
                         #print(self.bbands[ticker].lines.top, self.bbands[ticker].lines.mid, self.bbands[ticker].lines.bot)
-                        self.log(f"BUY CREATE [{ticker}] {self.data.close[0]:.2f}")
 
                         lot = self.p.lots[ticker]
                         percent = 3    # сколько % от депозита использовать на сделку
@@ -120,6 +135,8 @@ class TestStrategy04(bt.Strategy):
 
                         size = functions.calc_size(depo=depo, lot=lot, percent=percent, ticker_price=ticker_price)
 
+                        self.log(f"BUY CREATE [{ticker}] {self.data.close[0]:.2f}")
+                        self.log_csv(ticker=ticker, signal='BUY', signal_price=_close, size=size)
                         self.buy(data=data, exectype=bt.Order.Market, size=size)
                         self.orders[ticker] = True
 
@@ -133,6 +150,7 @@ class TestStrategy04(bt.Strategy):
                     # условие на продажу take-profit
                     if self.sma_all1[ticker] < self.sma_all2[ticker]:
                         self.log(f"SELL CREATE [{ticker}] {self.data.close[0]:.2f}")
+                        self.log_csv(ticker=ticker, signal='SELL', signal_price=_close, size=size)
                         self.sell(data=data, exectype=bt.Order.Market, size=size)
                         self.orders[ticker] = False
                     # if _close>=self.price_buy[ticker]*(1+profit_percent*ratio_profit/100):
@@ -142,6 +160,7 @@ class TestStrategy04(bt.Strategy):
                     # условие на продажу stop-loss %
                     if _close<=self.price_buy[ticker]*(1-stop_loss_percent/100):
                         self.log(f"SELL STOP LOSS CREATE [{ticker}] {self.data.close[0]:.2f}")
+                        self.log_csv(ticker=ticker, signal='STOP LOSS', signal_price=_close, size=size)
                         self.sell(data=data, exectype=bt.Order.Market, size=size)
                         self.orders[ticker] = False
                 # ==========================================================================================================================
@@ -201,12 +220,19 @@ class TestStrategy04(bt.Strategy):
         if order.status in [order.Completed]:
             if order.isbuy():
                 self.log(f"BUY EXECUTED [{order.data._name}], {order.executed.price:.2f} size={size}")
+                self.log_csv(ticker=ticker, order='BUY', order_price=order.executed.price, size=size,
+                             status=order.getstatusname(order.status), cost=f"{order.executed.value:.2f}",
+                             comm=f"{order.executed.comm:.2f}")
                 self.price_buy[ticker] = order.executed.price       # записываем цену покупки для тикера
-                self.size_buy[ticker] = size  # записываем объем покупки для тикера
+                self.size_buy[ticker] = size                        # записываем объем покупки для тикера
             elif order.issell():
                 self.log(f"SELL EXECUTED [{order.data._name}], {order.executed.price:.2f} size={size}")
+                self.log_csv(ticker=ticker, order='SELL', order_price=order.executed.price, size=size,
+                             status=order.getstatusname(order.status),
+                             cost=f"{order.executed.value + order.executed.pnl:.2f}",
+                             comm=f"{order.executed.comm:.2f}", pnl=f"{order.executed.pnl:.2f}")
                 self.price_buy.pop(ticker, None)                    # удаляем цену покупки для тикера
-                self.size_buy.pop(ticker, None)  # удаляем объем покупки для тикера
+                self.size_buy.pop(ticker, None)                     # удаляем объем покупки для тикера
 
             self.bar_executed = len(self)
 

@@ -1,3 +1,6 @@
+import datetime, os
+import pandas as pd
+
 def calc_size(depo, lot, percent, ticker_price):
     """
     Функция расчета позиции
@@ -11,8 +14,9 @@ def calc_size(depo, lot, percent, ticker_price):
     shares_can_buy = money / cost_lot
     size_mod = shares_can_buy * lot     # размер не кратный lot
     size = round(size_mod / lot) * lot    # размер кратный lot
-    print(money, cost_lot, shares_can_buy, size_mod, size)
+    # print(money, cost_lot, shares_can_buy, size_mod, size)
     return size
+
 
 def get_info_about_paper(qpProvider, symbols, show_log=False):
     """
@@ -39,3 +43,18 @@ def get_info_about_paper(qpProvider, symbols, show_log=False):
         lots[symbol] = securityInfo['lot_size']                      # сохраняем Лот в глобальной переменной lot
 
     return syminfo_mintick, f_decimal, lots
+
+
+def export_log_to_csv(my_log, export_dir):
+    """
+    Функция экспорта логов в csv файл
+    """
+    time_log = datetime.datetime.now().strftime('%d-%m-%Y_%H-%M-%S')
+    df = pd.DataFrame(my_log, columns=('TRADEDATE', 'TICKER', 'SIGNAL', 'S.PRICE', 'ORDER', 'O.PRICE',
+                                               'SIZE', 'STATUS', 'COST', 'COMM', 'PNL', 'AMOUNT', 'DEPO', 'STRATEGY_NAME', 'INFO'))
+    if not os.path.exists(export_dir): os.makedirs(export_dir)
+    df.to_csv(os.path.join(export_dir, time_log+"_logs.csv"), index=False, encoding='utf-8', sep=";", decimal=".")
+
+    # запись имени последнего лог файла
+    with open(os.path.join(export_dir, 'last_log_filename.txt'), "w") as the_file:
+        the_file.write(time_log+"_logs.csv")

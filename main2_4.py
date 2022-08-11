@@ -2,7 +2,7 @@ from datetime import datetime
 from backtrader import Cerebro, TimeFrame
 from BackTraderQuik.QKStore import QKStore  # Хранилище QUIK
 from QuikPy import QuikPy  # Работа с QUIK из Python через LUA скрипты QuikSharp
-import StrategySMA2_4 as ts  # Торговые системы
+import StrategySMA2_4_fix as ts  # Торговые системы
 
 import functions
 
@@ -15,6 +15,7 @@ if __name__ == '__main__':  # Точка входа при запуске это
     symbols = ('TQBR.GAZP', )  # Кортеж тикеров
     symbols = ('TQBR.GAZP', 'TQBR.AFKS',)  # Кортеж тикеров
     symbols = ('TQBR.AFKS', 'TQBR.SBER', 'TQBR.GAZP', 'TQBR.GMKN', 'TQBR.LKOH', )  # Кортеж тикеров
+    symbols = ('TQBR.GAZP',)  # Кортеж тикеров
 
 
     qpProvider = QuikPy()  # Вызываем конструктор QuikPy с подключением к локальному компьютеру с QUIK
@@ -33,10 +34,15 @@ if __name__ == '__main__':  # Точка входа при запуске это
     # cerebro.addstrategy(ts.TestStrategy01, name="Two Tickers", symbols=('TQBR.GAZP', 'TQBR.LKOH',))  # Добавляем торговую систему по двум тикерам
     cerebro.addstrategy(ts.TestStrategy04, name="All Tickers", lots=lots)  # Добавляем торговую систему по всем тикерам
 
-    cerebro.run()  # Запуск торговой системы
+    strategy_runs = cerebro.run()  # Запуск торговой системы
     # cerebro.plot()  # Рисуем график. Требуется matplotlib версии 3.2.2 (pip install matplotlib==3.2.2)
 
     print('Стоимость портфеля: %.2f' % cerebro.broker.getvalue())
     print('Свободные средства: %.2f' % cerebro.broker.get_cash())
+
+    my_log = strategy_runs[0].my_logs
+    functions.export_log_to_csv(my_log=my_log, export_dir="logs")
+
+    qpProvider.CloseConnectionAndThread()  # Закрытие соединения с Quik
 
     cerebro.plot(style='candle')  # Рисуем график. Требуется matplotlib версии 3.2.2 (pip install matplotlib==3.2.2)

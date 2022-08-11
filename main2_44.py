@@ -4,6 +4,8 @@ from BackTraderQuik.QKStore import QKStore  # Хранилище QUIK
 import Strategy2_44 as ts  # Торговые системы
 from QuikPy import QuikPy  # Работа с QUIK из Python через LUA скрипты QuikSharp
 
+import functions
+
 if __name__ == '__main__':  # Точка входа при запуске этого скрипта
     qpProvider = QuikPy()  # Вызываем конструктор QuikPy с подключением к локальному компьютеру с QUIK
     cerebro = Cerebro()  # Инициируем "движок" BackTrader
@@ -44,12 +46,14 @@ if __name__ == '__main__':  # Точка входа при запуске это
     #cerebro.addstrategy(ts.TestStrategy01, name="Two Tickers", symbols=('TQBR.GAZP', 'TQBR.LKOH',))  # Добавляем торговую систему по двум тикерам
     cerebro.addstrategy(ts.TestStrategy01, name="All Tickers", lots=all_lots)  # Добавляем торговую систему по всем тикерам
 
-    cerebro.run()  # Запуск торговой системы
+    strategy_runs = cerebro.run()  # Запуск торговой системы
 
     print('Стоимость портфеля: %.2f' % cerebro.broker.getvalue())
     print('Свободные средства: %.2f' % cerebro.broker.get_cash())
 
-    cerebro.plot(style='candle')  # Рисуем график. Требуется matplotlib версии 3.2.2 (pip install matplotlib==3.2.2)
+    my_log = strategy_runs[0].my_logs
+    functions.export_log_to_csv(my_log=my_log, export_dir="logs")
 
-    # Выход
-    qpProvider.CloseConnectionAndThread()  # Перед выходом закрываем соединение и поток QuikPy из любого экземпляра
+    qpProvider.CloseConnectionAndThread()  # Закрытие соединения с Quik
+
+    cerebro.plot(style='candle')  # Рисуем график. Требуется matplotlib версии 3.2.2 (pip install matplotlib==3.2.2)

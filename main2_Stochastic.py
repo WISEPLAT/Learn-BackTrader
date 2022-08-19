@@ -2,7 +2,7 @@ from datetime import datetime
 from backtrader import Cerebro, TimeFrame
 from BackTraderQuik.QKStore import QKStore  # Хранилище QUIK
 from QuikPy import QuikPy  # Работа с QUIK из Python через LUA скрипты QuikSharp
-import StrategySMA2_84 as ts  # Торговые системы
+import Strategy2_Stochastic as ts  # Торговые системы
 
 import functions
 

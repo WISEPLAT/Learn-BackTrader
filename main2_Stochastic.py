@@ -2,7 +2,7 @@ from datetime import datetime
 from backtrader import Cerebro, TimeFrame
 from BackTraderQuik.QKStore import QKStore  # Хранилище QUIK
 from QuikPy import QuikPy  # Работа с QUIK из Python через LUA скрипты QuikSharp
-import Strategy2_Stochastic as ts  # Торговые системы
+import Strategy2_Stochastic_v2 as ts  # Торговые системы
 
 import functions
 
@@ -16,6 +16,7 @@ if __name__ == '__main__':  # Точка входа при запуске это
     symbols = ('TQBR.GAZP', 'TQBR.AFKS',)  # Кортеж тикеров
     symbols = ('TQBR.AFKS', 'TQBR.SBER', 'TQBR.GAZP', 'TQBR.GMKN', 'TQBR.LKOH', )  # Кортеж тикеров
     symbols = ('TQBR.GAZP',)  # Кортеж тикеров
+    # symbols = ('TQBR.LKOH', 'TQBR.GAZP', )  # Кортеж тикеров
 
 
     qpProvider = QuikPy()  # Вызываем конструктор QuikPy с подключением к локальному компьютеру с QUIK

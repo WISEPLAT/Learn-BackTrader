@@ -6,6 +6,14 @@ import numpy as np
 import random
 
 
+class OverUnder(bt.Indicator):
+    lines = ('overunder',)
+    params = dict(data2=20)
+
+    def __init__(self):
+        self.l.overunder = self.data > self.p.data2             # данные над data2 == 1
+
+
 class OverUnderMovAv(bt.Indicator):
     lines = ('overunder',)
     params = dict(period=20, movav=bt.indicators.MovAv.EMA)
@@ -62,8 +70,8 @@ class TestStrategy04(bt.Strategy):
 
         print(self.p.lots)
 
-        #self.sma_all1 = defaultdict(list)
-        #self.sma_all2 = defaultdict(list)
+        self.sma_all1 = defaultdict(list)
+        self.sma_all2 = defaultdict(list)
 
         self.ema_all1 = defaultdict(list)
         self.ema_all2 = defaultdict(list)
@@ -73,9 +81,13 @@ class TestStrategy04(bt.Strategy):
         self.cond1 = defaultdict(list)
         self.test1 = defaultdict(list)
 
-        #self.macd = defaultdict(list)
-        #self.bbands = defaultdict(list)
-        #self.crossover = defaultdict(list)
+        self.macd = defaultdict(list)
+        self.bbands = defaultdict(list)
+
+        self.close_over_middle = defaultdict(list)
+
+        self.crossover = defaultdict(list)
+
         self.crossover_80 = defaultdict(list)
         self.crossover_20 = defaultdict(list)
         self.crossover_DK = defaultdict(list)
@@ -88,30 +100,45 @@ class TestStrategy04(bt.Strategy):
 
         self.my_logs = []
 
+        self.ema_all1 = defaultdict(list)
+        self.ema_all2 = defaultdict(list)
+        self.close_under_ema_all10 = defaultdict(list)
+
         for i in range(len(self.datas)):
             ticker = list(self.dnames.keys())[i]    # key name is ticker name
-            #self.sma_all1[ticker] = bt.indicators.SMA(self.datas[i], period=8)
-            #self.sma_all2[ticker] = bt.indicators.SMA(self.datas[i], period=32)
-            self.ema_all1[ticker] = bt.indicators.ExponentialMovingAverage(self.datas[i], period=11)
-            self.ema_all2[ticker] = bt.indicators.ExponentialMovingAverage(self.datas[i], period=30)
-            #self.close_under_ema_all1[ticker] = bt.ind.Cmp(self.ema_all1[ticker], self.datas[i].close)
-            self.close_under_ema_all1[ticker] = OverUnderMovAv(self.datas[i].close, period=21)
 
-            self.ema_all1_over_ema_all2[ticker] = OverUnderMovAvMovAv(self.datas[i].close, period=11, period2=30)
+            self.ema_all1[ticker] = bt.indicators.ExponentialMovingAverage(self.datas[i], period=8)
+            self.ema_all2[ticker] = bt.indicators.ExponentialMovingAverage(self.datas[i], period=16)
 
-            self.cond1[ticker] = Condition1(self.datas[i].close, period=21, period2=30)
+            self.close_under_ema_all10[ticker] = OverUnder(self.ema_all1[ticker].lines.ema, data2=self.ema_all2[ticker].lines.ema)
 
-            # self.test1[ticker] = ((self.ema_all1_over_ema_all2[ticker] == 1) == self.close_under_ema_all1[ticker])
+            # self.sma_all1[ticker] = bt.indicators.SMA(self.datas[i], period=64)
+            # self.sma_all2[ticker] = bt.indicators.SMA(self.datas[i], period=128)
 
-            self.stoch[ticker] = bt.indicators.Stochastic(self.datas[i], period=21, period_dfast=7, period_dslow=7)
-            self.crossover_80[ticker] = bt.ind.CrossOver(self.stoch[ticker].lines.percD, 80)
-            self.crossover_20[ticker] = bt.ind.CrossOver(self.stoch[ticker].lines.percD, 20)
-            self.crossover_DK[ticker] = bt.ind.CrossOver(self.stoch[ticker].lines.percD, self.stoch[ticker].lines.percK)
+            # self.ema_all1[ticker] = bt.indicators.ExponentialMovingAverage(self.datas[i], period=11)
+            # self.ema_all2[ticker] = bt.indicators.ExponentialMovingAverage(self.datas[i], period=30)
+            # #self.close_under_ema_all1[ticker] = bt.ind.Cmp(self.ema_all1[ticker], self.datas[i].close)
+            # self.close_under_ema_all1[ticker] = OverUnderMovAv(self.datas[i].close, period=21)
+            #
+            # self.ema_all1_over_ema_all2[ticker] = OverUnderMovAvMovAv(self.datas[i].close, period=11, period2=30)
+            #
+            # self.cond1[ticker] = Condition1(self.datas[i].close, period=21, period2=30)
+            #
+            # # self.test1[ticker] = ((self.ema_all1_over_ema_all2[ticker] == 1) == self.close_under_ema_all1[ticker])
+            #
+            # self.stoch[ticker] = bt.indicators.Stochastic(self.datas[i], period=21, period_dfast=7, period_dslow=7)
+            # self.crossover_80[ticker] = bt.ind.CrossOver(self.stoch[ticker].lines.percD, 80)
+            # self.crossover_20[ticker] = bt.ind.CrossOver(self.stoch[ticker].lines.percD, 20)
+            # self.crossover_DK[ticker] = bt.ind.CrossOver(self.stoch[ticker].lines.percD, self.stoch[ticker].lines.percK)
+            #
 
-            #self.macd[ticker] = bt.indicators.MACD(self.datas[i], period_me1=8, period_me2=16, period_signal=9)
-            #self.bbands[ticker] = bt.indicators.BollingerBands(self.datas[i], period=20)
-            #self.crossover[ticker] = bt.ind.CrossOver(self.sma_all1[ticker], self.sma_all2[ticker])
-            #self.crossover[ticker] = bt.ind.UpDayBool(self.sma_all1[ticker], self.sma_all2[ticker])
+            # self.macd[ticker] = bt.indicators.MACD(self.datas[i], period_me1=8, period_me2=16, period_signal=9)
+            self.bbands[ticker] = bt.indicators.BollingerBands(self.datas[i], period=20)
+
+            self.close_over_middle[ticker] = OverUnder(self.datas[i].close, data2=self.bbands[ticker].lines.mid)
+
+            self.crossover[ticker] = bt.ind.CrossOver(self.ema_all1[ticker], self.ema_all2[ticker])
+            # #self.crossover[ticker] = bt.ind.UpDayBool(self.sma_all1[ticker], self.sma_all2[ticker])
 
     def log(self, txt, dt=None):
         """Вывод строки с датой на консоль"""

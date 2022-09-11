@@ -14,6 +14,16 @@ class OverUnder(bt.Indicator):
         self.l.overunder = self.data > self.p.data2             # данные над data2 == 1
 
 
+class UpDownTrend(bt.Indicator):
+    lines = ('trend',)
+    params = dict(period=20, )
+
+    def __init__(self):
+        y1 = self.data
+        y2 = self.data(-self.p.period)
+        self.l.trend = cond = bt.Cmp(y1, y2)  # => 1 если y1 > y2
+
+
 class KC(bt.Indicator):
     lines = ('mid', 'top', 'bot',)
     params = dict(multiplier=2.0, period=20, movav=bt.indicators.MovAv.EMA, atr=bt.indicators.AverageTrueRange, )
@@ -127,6 +137,7 @@ class TestStrategy01(bt.Strategy):
 
         self.roc = defaultdict(list)
         self.kc = defaultdict(list)
+        self.trend = defaultdict(list)
 
         for i in range(len(self.datas)):
             ticker = list(self.dnames.keys())[i]    # key name is ticker name
@@ -138,7 +149,9 @@ class TestStrategy01(bt.Strategy):
 
             self.roc[ticker] = bt.indicators.RateOfChange100(self.datas[i], period=100)
 
-            self.kc[ticker] = KC(self.datas[i], period=20)
+            self.kc[ticker] = KC(self.datas[i], period=200, multiplier=3.0)
+
+            self.trend[ticker] = UpDownTrend(self.kc[ticker].lines.top, period=20)
 
             # self.sma_all1[ticker] = bt.indicators.SMA(self.datas[i], period=64)
             # self.sma_all2[ticker] = bt.indicators.SMA(self.datas[i], period=128)

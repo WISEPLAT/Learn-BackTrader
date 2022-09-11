@@ -1,7 +1,7 @@
 from datetime import datetime
 from backtrader import Cerebro, TimeFrame
 from BackTraderQuik.QKStore import QKStore  # Хранилище QUIK
-import Strategy2_ROC as ts  # Торговые системы
+import Strategy2_ROC_KC_UpDownTrend as ts  # Торговые системы
 from QuikPy import QuikPy  # Работа с QUIK из Python через LUA скрипты QuikSharp
 
 import functions
@@ -15,7 +15,8 @@ if __name__ == '__main__':  # Точка входа при запуске это
     #cerebro.broker.set_fundmode(True)  # the default is 100
 
     symbols = ('TQBR.SBER', 'TQBR.GAZP', 'TQBR.LKOH', 'TQBR.GMKN',)  # Кортеж тикеров
-    symbols = ('TQBR.GAZP', )  # Кортеж тикеров
+    symbols = ('TQBR.SBER', 'TQBR.LKOH', )  # Кортеж тикеров
+    symbols = ('TQBR.SBER', )
 
     all_lots = {}
 

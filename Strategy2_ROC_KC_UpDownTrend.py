@@ -6,12 +6,40 @@ import numpy as np
 import random
 
 
+class Ntimes1(bt.Indicator):
+    lines = ('ntimes1',)
+    params = dict(period=10)
+
+    def __init__(self):
+        #alln = bt.indicators.AllN(self.data, period=self.p.period)
+        self.l.ntimes1 = self.data - 1
+
+
+class And3(bt.Indicator):
+    lines = ('and3',)
+    params = dict(data2=1, data3=1)
+
+    def __init__(self):
+        self.l.and3 = bt.And(bt.And(self.data, self.p.data2), self.p.data3)
+
+
 class OverUnder(bt.Indicator):
     lines = ('overunder',)
     params = dict(data2=20)
 
     def __init__(self):
         self.l.overunder = self.data > self.p.data2             # данные над data2 == 1
+
+
+class OverUnder2(bt.Indicator):
+    lines = ('overunder',)
+    params = dict(data2=20)
+
+    def __init__(self):
+        # self.l.overunder = bt.If(self.data > self.p.data2, 1.0, 0.0)             # данные над data2 == 1
+        self.l.overunder = self.data > self.p.data2  # данные над data2 == 1
+        # self.l.overunder = bt.Cmp(self.data, self.p.data2)  # данные над data2 == 1
+        # self.l.overunder = bt.Max(self.data, self.p.data2)
 
 
 class UpDownTrend(bt.Indicator):
@@ -139,6 +167,12 @@ class TestStrategy01(bt.Strategy):
         self.kc = defaultdict(list)
         self.trend = defaultdict(list)
 
+        self.roc_over_0 = defaultdict(list)
+        self.close_over_kc_top = defaultdict(list)
+
+        self.enter_long = defaultdict(list)
+        self.ntimes1 = defaultdict(list)
+
         for i in range(len(self.datas)):
             ticker = list(self.dnames.keys())[i]    # key name is ticker name
 
@@ -152,6 +186,17 @@ class TestStrategy01(bt.Strategy):
             self.kc[ticker] = KC(self.datas[i], period=200, multiplier=3.0)
 
             self.trend[ticker] = UpDownTrend(self.kc[ticker].lines.top, period=20)
+
+            self.roc_over_0[ticker] = OverUnder2(self.roc[ticker].lines.roc100, data2=0.0)
+
+            self.close_over_kc_top[ticker] = OverUnder(self.datas[i].close, data2=self.kc[ticker].lines.top)
+
+            self.enter_long[ticker] = And3(self.trend[ticker].lines.trend,
+                                           data2=self.roc_over_0[ticker].lines.overunder,
+                                           data3=self.close_over_kc_top[ticker].lines.overunder)
+
+            self.ntimes1[ticker] = Ntimes1(self.roc_over_0[ticker].lines.overunder, period=20)
+            #self.ntimes1[ticker] = Ntimes1(self.datas[i].close, period=20)
 
             # self.sma_all1[ticker] = bt.indicators.SMA(self.datas[i], period=64)
             # self.sma_all2[ticker] = bt.indicators.SMA(self.datas[i], period=128)

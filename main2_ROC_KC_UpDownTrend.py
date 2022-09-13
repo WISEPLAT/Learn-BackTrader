@@ -14,6 +14,12 @@ if __name__ == '__main__':  # Точка входа при запуске это
     cerebro.broker.setcommission(commission=0.01)
     #cerebro.broker.set_fundmode(True)  # the default is 100
 
+    symbols = ('TQBR.AFKS', 'TQBR.AFLT', 'TQBR.ALRS', 'TQBR.CBOM', 'TQBR.CHMF', 'TQBR.DSKY', 'TQBR.ENPG', 'TQBR.FEES',
+               'TQBR.FIVE', 'TQBR.FIXP', 'TQBR.FLOT', 'TQBR.GAZP', 'TQBR.GMKN', 'TQBR.HHRU', 'TQBR.HYDR', 'TQBR.LKOH',
+               'TQBR.MAGN', 'TQBR.MGNT', 'TQBR.MOEX', 'TQBR.MTSS', 'TQBR.NLMK', 'TQBR.NVTK', 'TQBR.OZON', 'TQBR.PHOR',
+               'TQBR.PIKK', 'TQBR.PLZL', 'TQBR.POLY', 'TQBR.ROSN', 'TQBR.RTKM', 'TQBR.SBER', 'TQBR.SNGS', 'TQBR.TATN',
+               'TQBR.TCSG', 'TQBR.VKCO', 'TQBR.VTBR', 'TQBR.TATNP', 'TQBR.TRNFP', 'TQBR.SBERP', 'TQBR.SNGSP',
+               'TQBR.AKRN', 'TQBR.SIBN', 'TQBR.LSRG', 'TQBR.RASP', 'TQBR.BSPB', 'TQBR.MTLRP', 'TQBR.RTKMP',)
     symbols = ('TQBR.SBER', 'TQBR.GAZP', 'TQBR.LKOH', 'TQBR.GMKN',)  # Кортеж тикеров
     symbols = ('TQBR.SBER', 'TQBR.LKOH', )  # Кортеж тикеров
     symbols = ('TQBR.SBER', )

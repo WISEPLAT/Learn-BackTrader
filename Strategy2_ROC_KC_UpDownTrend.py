@@ -6,13 +6,33 @@ import numpy as np
 import random
 
 
-class Ntimes1(bt.Indicator):
-    lines = ('ntimes1',)
+class NtimestrueOk(bt.Indicator):
+    lines = ('ntimestrue',)
     params = dict(period=10)
+    plotinfo = dict(plot=True, subplot=True, plotname='Ntimestrue', )
 
     def __init__(self):
-        #alln = bt.indicators.AllN(self.data, period=self.p.period)
-        self.l.ntimes1 = self.data - 1
+        self.l.ntimestrue = bt.indicators.AllN(self.data1, period=self.p.period)
+
+
+class Ntimestrue(bt.Indicator):
+    lines = ('ntimestrue',)
+    params = dict(period=10)
+    plotinfo = dict(plot=True, subplot=True, plotname='Ntimestrue', )
+
+    def __init__(self):
+        #self.l.ntimestrue = bt.indicators.AllN(self.data, period=self.p.period)
+        pass
+
+    def next(self):
+        print("hi", self.data[0], self.data1[0])   # -200 => 1
+
+        if self.data1[0]:
+            self.l.ntimestrue[0] = 1.0
+        else:
+            self.l.ntimestrue[0] = 0.0
+
+        #self.l.ntimestrue[0] = random.randint(0, 1)
 
 
 class And3(bt.Indicator):
@@ -20,7 +40,8 @@ class And3(bt.Indicator):
     params = dict(data2=1, data3=1)
 
     def __init__(self):
-        self.l.and3 = bt.And(bt.And(self.data, self.p.data2), self.p.data3)
+        self.l.and3 = bt.And(self.data, self.p.data2, self.p.data3)
+        #self.l.and3 = bt.And(bt.And(self.data, self.p.data2), self.p.data3)
 
 
 class OverUnder(bt.Indicator):
@@ -31,15 +52,12 @@ class OverUnder(bt.Indicator):
         self.l.overunder = self.data > self.p.data2             # данные над data2 == 1
 
 
-class OverUnder2(bt.Indicator):
-    lines = ('overunder',)
+class UnderOver(bt.Indicator):
+    lines = ('underover',)
     params = dict(data2=20)
 
     def __init__(self):
-        # self.l.overunder = bt.If(self.data > self.p.data2, 1.0, 0.0)             # данные над data2 == 1
-        self.l.overunder = self.data > self.p.data2  # данные над data2 == 1
-        # self.l.overunder = bt.Cmp(self.data, self.p.data2)  # данные над data2 == 1
-        # self.l.overunder = bt.Max(self.data, self.p.data2)
+        self.l.underover = self.data < self.p.data2             # данные под data2 == 1
 
 
 class UpDownTrend(bt.Indicator):
@@ -49,7 +67,8 @@ class UpDownTrend(bt.Indicator):
     def __init__(self):
         y1 = self.data
         y2 = self.data(-self.p.period)
-        self.l.trend = cond = bt.Cmp(y1, y2)  # => 1 если y1 > y2
+        #self.l.trend = cond = bt.Cmp(y1, y2)  # => 1 если y1 > y2       => 0 если y1 == y2      => -1 иначе
+        self.l.trend = cond = y1 > y2  # => 1 если y1 > y2
 
 
 class KC(bt.Indicator):
@@ -166,17 +185,17 @@ class TestStrategy01(bt.Strategy):
         self.roc = defaultdict(list)
         self.kc = defaultdict(list)
         self.trend = defaultdict(list)
-
         self.roc_over_0 = defaultdict(list)
         self.close_over_kc_top = defaultdict(list)
+        self.and3 = defaultdict(list)
 
         self.enter_long = defaultdict(list)
-        self.ntimes1 = defaultdict(list)
+        self.close_long = defaultdict(list)
 
         for i in range(len(self.datas)):
             ticker = list(self.dnames.keys())[i]    # key name is ticker name
 
-            # self.ema_all1[ticker] = bt.indicators.ExponentialMovingAverage(self.datas[i], period=8)
+            self.ema_all1[ticker] = bt.indicators.ExponentialMovingAverage(self.datas[i], period=8)
             # self.ema_all2[ticker] = bt.indicators.ExponentialMovingAverage(self.datas[i], period=16)
 
             # self.close_under_ema_all10[ticker] = OverUnder(self.ema_all1[ticker].lines.ema, data2=self.ema_all2[ticker].lines.ema)
@@ -187,16 +206,18 @@ class TestStrategy01(bt.Strategy):
 
             self.trend[ticker] = UpDownTrend(self.kc[ticker].lines.top, period=20)
 
-            self.roc_over_0[ticker] = OverUnder2(self.roc[ticker].lines.roc100, data2=0.0)
+            self.roc_over_0[ticker] = OverUnder(self.roc[ticker].lines.roc100, data2=0.0)
 
             self.close_over_kc_top[ticker] = OverUnder(self.datas[i].close, data2=self.kc[ticker].lines.top)
 
-            self.enter_long[ticker] = And3(self.trend[ticker].lines.trend,
+            self.and3[ticker] = And3(self.trend[ticker].lines.trend,
                                            data2=self.roc_over_0[ticker].lines.overunder,
                                            data3=self.close_over_kc_top[ticker].lines.overunder)
 
-            self.ntimes1[ticker] = Ntimes1(self.roc_over_0[ticker].lines.overunder, period=20)
-            #self.ntimes1[ticker] = Ntimes1(self.datas[i].close, period=20)
+            self.enter_long[ticker] = NtimestrueOk(self.datas[i], self.and3[ticker].lines.and3, period=50)
+
+            #self.close_long[ticker] = UnderOver(self.datas[i].close, data2=self.kc[ticker].lines.bot)
+            self.close_long[ticker] = UnderOver(self.ema_all1[ticker].lines.ema, data2=self.kc[ticker].lines.mid)
 
             # self.sma_all1[ticker] = bt.indicators.SMA(self.datas[i], period=64)
             # self.sma_all2[ticker] = bt.indicators.SMA(self.datas[i], period=128)
@@ -271,9 +292,12 @@ class TestStrategy01(bt.Strategy):
                 _oc2 = (_open + _close) / 2
                 _volume = data.volume  # ссылка на Объемы # print(volume[0])
 
+                #print(bool(self.trend[ticker]), bool(self.close_over_kc_top[ticker]), bool(self.roc_over_0[ticker]), bool(self.and3[ticker]))
+                print(bool(self.enter_long[ticker]))
 
-                print(bool(self.cond1[ticker]), bool(self.test1[ticker]), self.cond1[ticker] == self.test1[ticker])
-                if self.cond1[ticker] != self.test1[ticker]: print("ERROR***")
+
+                #print(bool(self.cond1[ticker]), bool(self.test1[ticker]), self.cond1[ticker] == self.test1[ticker])
+                #if self.cond1[ticker] != self.test1[ticker]: print("ERROR***")
 
 
                 # # https://www.lfd.uci.edu/~gohlke/pythonlibs/#ta-lib
@@ -291,7 +315,7 @@ class TestStrategy01(bt.Strategy):
 
                 # условие на покупку
                 if not self.orders[ticker]:
-                    if self.crossover_DK[ticker] == -1 and self.cond1[ticker]:       #
+                    if self.enter_long[ticker]:       #
                         lot = self.p.lots[ticker]
                         percent = 3    # сколько % от депозита использовать на сделку
                         depo = self.cerebro.broker.get_cash()
@@ -330,7 +354,7 @@ class TestStrategy01(bt.Strategy):
                     #     self.first_buy[ticker] = True
 
                     # условие на продажу take-profit
-                    if self.close_under_ema_all1[ticker] == -1:       #
+                    if self.close_long[ticker]:       #
                         self.log(f"SELL CREATE [{ticker}] {self.data.close[0]:.2f}")
                         self.log_csv(ticker=ticker, signal='SELL', signal_price=_close, size=size)
 

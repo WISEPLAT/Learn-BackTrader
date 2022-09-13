@@ -38,6 +38,7 @@ class Ntimestrue(bt.Indicator):
 class And3(bt.Indicator):
     lines = ('and3',)
     params = dict(data2=1, data3=1)
+    plotinfo = dict(plot=True)
 
     def __init__(self):
         self.l.and3 = bt.And(self.data, self.p.data2, self.p.data3)
@@ -47,6 +48,7 @@ class And3(bt.Indicator):
 class OverUnder(bt.Indicator):
     lines = ('overunder',)
     params = dict(data2=20)
+    plotinfo = dict(plot=True)
 
     def __init__(self):
         self.l.overunder = self.data > self.p.data2             # данные над data2 == 1
@@ -55,6 +57,7 @@ class OverUnder(bt.Indicator):
 class UnderOver(bt.Indicator):
     lines = ('underover',)
     params = dict(data2=20)
+    plotinfo = dict(plot=True)
 
     def __init__(self):
         self.l.underover = self.data < self.p.data2             # данные под data2 == 1
@@ -63,6 +66,7 @@ class UnderOver(bt.Indicator):
 class UpDownTrend(bt.Indicator):
     lines = ('trend',)
     params = dict(period=20, )
+    plotinfo = dict(plot=True)
 
     def __init__(self):
         y1 = self.data
@@ -214,10 +218,14 @@ class TestStrategy01(bt.Strategy):
                                            data2=self.roc_over_0[ticker].lines.overunder,
                                            data3=self.close_over_kc_top[ticker].lines.overunder)
 
-            self.enter_long[ticker] = NtimestrueOk(self.datas[i], self.and3[ticker].lines.and3, period=50)
+            self.enter_long[ticker] = NtimestrueOk(self.datas[i], self.and3[ticker].lines.and3, period=10)
+            # self.enter_long[ticker] = bt.indicators.CrossUp(self.ema_all1[ticker].lines.ema,
+            #                                                   self.kc[ticker].lines.bot)
 
             #self.close_long[ticker] = UnderOver(self.datas[i].close, data2=self.kc[ticker].lines.bot)
             self.close_long[ticker] = UnderOver(self.ema_all1[ticker].lines.ema, data2=self.kc[ticker].lines.mid)
+            # self.close_long[ticker] = bt.indicators.CrossDown(self.ema_all1[ticker].lines.ema,
+            #                                                   self.kc[ticker].lines.top)
 
             # self.sma_all1[ticker] = bt.indicators.SMA(self.datas[i], period=64)
             # self.sma_all2[ticker] = bt.indicators.SMA(self.datas[i], period=128)
@@ -340,21 +348,21 @@ class TestStrategy01(bt.Strategy):
 
                 profit_percent = 1
                 ratio_profit = 5        # 1/3 => 1%*3=3%
-                stop_loss_percent = 1
+                stop_loss_percent = 5
                 # условие на продажу
                 if self.orders[ticker] and self.price_buy[ticker]:
                     # print(f"_close={_close} self.price_buy[ticker]={self.price_buy[ticker]} take_profit={self.price_buy[ticker]*(1+profit_percent*ratio_profit/100)} stop-loss={self.price_buy[ticker]*(1-profit_percent/100)}")
                     size = self.size_buy[ticker]
-                    # # условие на продажу stop-loss %
-                    # if _close <= self.price_buy[ticker] * (1 - stop_loss_percent / 100):
-                    #     self.log(f"SELL STOP LOSS CREATE [{ticker}] {self.data.close[0]:.2f}")
-                    #     self.log_csv(ticker=ticker, signal='STOP LOSS', signal_price=_close, size=size)
-                    #     self.sell(data=data, exectype=bt.Order.Market, size=size)
-                    #     self.orders[ticker] = False
-                    #     self.first_buy[ticker] = True
+                    # условие на продажу stop-loss %
+                    if _close <= self.price_buy[ticker] * (1 - stop_loss_percent / 100):
+                        self.log(f"SELL STOP LOSS CREATE [{ticker}] {self.data.close[0]:.2f}")
+                        self.log_csv(ticker=ticker, signal='STOP LOSS', signal_price=_close, size=size)
+                        self.sell(data=data, exectype=bt.Order.Market, size=size)
+                        self.orders[ticker] = False
+                        self.first_buy[ticker] = True
 
                     # условие на продажу take-profit
-                    if self.close_long[ticker]:       #
+                    if self.close_long[ticker] and self.orders[ticker]:       #
                         self.log(f"SELL CREATE [{ticker}] {self.data.close[0]:.2f}")
                         self.log_csv(ticker=ticker, signal='SELL', signal_price=_close, size=size)
 

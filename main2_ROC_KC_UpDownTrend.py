@@ -22,7 +22,7 @@ if __name__ == '__main__':  # Точка входа при запуске это
                'TQBR.AKRN', 'TQBR.SIBN', 'TQBR.LSRG', 'TQBR.RASP', 'TQBR.BSPB', 'TQBR.MTLRP', 'TQBR.RTKMP',)
     symbols = ('TQBR.SBER', 'TQBR.GAZP', 'TQBR.LKOH', 'TQBR.GMKN',)  # Кортеж тикеров
     symbols = ('TQBR.SBER', 'TQBR.LKOH', )  # Кортеж тикеров
-    symbols = ('TQBR.SBER', )
+    #symbols = ('TQBR.GAZP', )
 
     all_lots = {}
 

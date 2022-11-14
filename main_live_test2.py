@@ -34,6 +34,14 @@ class LimitCancel(bt.Strategy):
 
         self.orders = defaultdict(list)     # ордера по тикерам
 
+        #qpProvider = QuikPy()  # Вызываем конструктор QuikPy с подключением к локальному компьютеру с QUIK
+        qpProvider.OnTransReply = self.OnTransReply  # Ответ на транзакцию пользователя. Если транзакция выполняется из QUIK, то не вызывается
+        qpProvider.OnOrder = self.OnOrder  # Получение новой / изменение существующей заявки
+        qpProvider.OnTrade = self.OnTrade  # Получение новой / изменение существующей сделки
+        qpProvider.OnFuturesClientHolding = self.OnFuturesClientHolding  # Изменение позиции по срочному рынку
+        qpProvider.OnDepoLimit = self.OnDepoLimit  # Изменение позиции по инструментам
+        qpProvider.OnDepoLimitDelete = self.OnDepoLimitDelete  # Удаление позиции по инструментам
+
     def round_lots(self, ticker, fix_size=1):    # округление до лотов
         lot = self.p.all_lots[ticker]
         size = round(abs(fix_size) / lot) * lot
@@ -95,39 +103,55 @@ class LimitCancel(bt.Strategy):
 
                 self.orders[ticker] = self.buy(data, exectype=bt.Order.Stop, price=limitPrice, size=size,
                                                take_profit=True, take_step=self.p.all_step[ticker],
-                                               take_scale=self.p.all_scale[ticker],)  # Тейк-профит заявка на покупку
+                                               take_scale=self.p.all_scale[ticker],)  # Лимитная заявка на покупку
 
-                # Новая Тейк-профит заявка
-                ticker = "TQBR.SBER"
-                classCode = 'TQBR'  # Код площадки
-                secCode = 'SBER'  # Код тикера
-                TransId = 12345  # Номер транзакции
-                price = 135.11  # Цена входа/выхода
-                quantity = 1  # Кол-во в лотах
+                pass
 
-                StopSteps = 1  # Размер проскальзывания в шагах цены
-                slippage = float(qpProvider.GetSecurityInfo(classCode, secCode)['data'][
-                                     'min_price_step']) * StopSteps  # Размер проскальзывания в деньгах
-                if slippage.is_integer():  # Целое значение проскальзывания мы должны отправлять без десятичных знаков
-                    slippage = int(slippage)  # поэтому, приводим такое проскальзывание к целому числу
-                transaction = {  # Все значения должны передаваться в виде строк
-                    'TRANS_ID': str(TransId),  # Номер транзакции задается клиентом
-                    'CLIENT_CODE': clientCode,  # Код клиента. Для фьючерсов его нет
-                    'ACCOUNT': tradeAccountId,  # Счет
-                    'ACTION': 'NEW_STOP_ORDER',  # Тип заявки: Новая стоп заявка
-                    'STOP_ORDER_KIND': 'TAKE_PROFIT_STOP_ORDER',  # Новая Тейк-профит заявка
-                    'SPREAD': f"{all_step[ticker]:.{all_scale[ticker]}f}",
-                    'SPREAD_UNITS': 'PRICE_UNITS',
-                    'OFFSET': f"{all_step[ticker]:.{all_scale[ticker]}f}",
-                    'OFFSET_UNITS': 'PRICE_UNITS',
-                    'CLASSCODE': classCode,  # Код площадки
-                    'SECCODE': secCode,  # Код тикера
-                    'OPERATION': 'B',  # B = покупка, S = продажа
-                    'QUANTITY': str(quantity),  # Кол-во в лотах
-                    'STOPPRICE': str(price),  # Стоп цена исполнения
-                    'EXPIRY_DATE': 'GTC'}  # Срок действия до отмены
-                rez = qpProvider.SendTransaction(transaction)["data"]
-                print(f'Новая стоп заявка отправлена на рынок: {rez}')
+                # # Новая Тейк-профит заявка - OK
+                # ticker = "TQBR.SBER"
+                # classCode = 'TQBR'  # Код площадки
+                # secCode = 'SBER'  # Код тикера
+                # TransId = 12345  # Номер транзакции
+                # price = 111.11  # Цена входа/выхода
+                # quantity = 1  # Кол-во в лотах
+                #
+                # StopSteps = 1  # Размер проскальзывания в шагах цены
+                # slippage = float(qpProvider.GetSecurityInfo(classCode, secCode)['data'][
+                #                      'min_price_step']) * StopSteps  # Размер проскальзывания в деньгах
+                # if slippage.is_integer():  # Целое значение проскальзывания мы должны отправлять без десятичных знаков
+                #     slippage = int(slippage)  # поэтому, приводим такое проскальзывание к целому числу
+                # transaction = {  # Все значения должны передаваться в виде строк
+                #     'TRANS_ID': str(TransId),  # Номер транзакции задается клиентом
+                #     'CLIENT_CODE': clientCode,  # Код клиента. Для фьючерсов его нет
+                #     'ACCOUNT': tradeAccountId,  # Счет
+                #     'ACTION': 'NEW_STOP_ORDER',  # Тип заявки: Новая стоп заявка
+                #     'STOP_ORDER_KIND': 'TAKE_PROFIT_STOP_ORDER',  # Новая Тейк-профит заявка
+                #     'SPREAD': f"{all_step[ticker]:.{all_scale[ticker]}f}",
+                #     'SPREAD_UNITS': 'PRICE_UNITS',
+                #     'OFFSET': f"{all_step[ticker]:.{all_scale[ticker]}f}",
+                #     'OFFSET_UNITS': 'PRICE_UNITS',
+                #     'CLASSCODE': classCode,  # Код площадки
+                #     'SECCODE': secCode,  # Код тикера
+                #     'OPERATION': 'B',  # B = покупка, S = продажа
+                #     'QUANTITY': str(quantity),  # Кол-во в лотах
+                #     'STOPPRICE': str(price),  # Стоп цена исполнения
+                #     'EXPIRY_DATE': 'GTC'}  # Срок действия до отмены
+                # rez = qpProvider.SendTransaction(transaction)["data"]
+                # print(f'Новая стоп заявка отправлена на рынок: {rez}')
+
+                # # Удаление существующей Тейк-профит заявки - OK
+                # orderNum = 301730582  # 19-и значный номер заявки
+                # transaction = {
+                #     'TRANS_ID': str(123),  # Номер транзакции задается клиентом
+                #     'ACTION': 'KILL_STOP_ORDER',  # Тип заявки: Удаление существующей заявки
+                #     'CLASSCODE': classCode,  # Код площадки
+                #     'SECCODE': secCode,  # Код тикера
+                #     'STOP_ORDER_KEY': str(orderNum)}  # Номер заявки
+                # rez = qpProvider.SendTransaction(transaction)["data"]
+                # print(f'Удаление заявки отправлено на рынок: {rez}')
+
+                # вывод список стоп-заявок
+                # positions_balance, positions_entry_price, tickers_in_position, positions_lastprice, cost_positions_now = functions.get_positions_from_quik_by_classCode(qpProvider, clientCode=clientCode, firmId=firmId, classCode='TQBR', show_log=True)
 
             else:  # Если позиция есть
                 self.orders[ticker] = self.close()  # Заявка на закрытие позиции по рыночной цене
@@ -166,6 +190,39 @@ class LimitCancel(bt.Strategy):
         """Изменение статуса позиции"""
         if trade.isclosed:  # Если позиция закрыта
             self.log(f'Trade Profit, Gross={trade.pnl:.2f}, NET={trade.pnlcomm:.2f}')
+
+    def OnTransReply(self, data):
+        """Обработчик события ответа на транзакцию пользователя"""
+        print('OnTransReply')
+        print(data['data'])  # Печатаем полученные данные
+        print(type(data['data']))
+
+    def OnOrder(self, data):
+        """Обработчик события получения новой / изменения существующей заявки"""
+        print('OnOrder')
+        print(data['data'])  # Печатаем полученные данные
+
+    def OnTrade(self, data):
+        """Обработчик события получения новой / изменения существующей сделки
+        Не вызывается при закрытии сделки
+        """
+        print('OnTrade')
+        print(data['data'])  # Печатаем полученные данные
+
+    def OnFuturesClientHolding(self, data):
+        """Обработчик события изменения позиции по срочному рынку"""
+        print('OnFuturesClientHolding')
+        print(data['data'])  # Печатаем полученные данные
+
+    def OnDepoLimit(self, data):
+        """Обработчик события изменения позиции по инструментам"""
+        print('OnDepoLimit')
+        print(data['data'])  # Печатаем полученные данные
+
+    def OnDepoLimitDelete(self, data):
+        """Обработчик события удаления позиции по инструментам"""
+        print('OnDepoLimitDelete')
+        print(data['data'])  # Печатаем полученные данные
 
 if __name__ == '__main__':  # Точка входа при запуске этого скрипта
     # open:
@@ -224,11 +281,11 @@ if __name__ == '__main__':  # Точка входа при запуске это
     print("all_scale: ", all_scale)
 
     # Добавляем торговую систему с лимитным входом в n%
-    cerebro.addstrategy(LimitCancel, LimitPct=5, all_step=all_step, all_lots=all_lots, all_scale=all_scale)
+    cerebro.addstrategy(LimitCancel, LimitPct=15, all_step=all_step, all_lots=all_lots, all_scale=all_scale)
 
     for ticker in symbols:
         data = store.getdata(dataname=ticker, timeframe=bt.TimeFrame.Minutes, compression=60,
-                             fromdate=datetime(2022, 11, 11), sessionstart=time(7, 0),
+                             fromdate=datetime(2022, 11, 10), sessionstart=time(7, 0),
                              LiveBars=True)  # Исторические и новые минутные бары за все время
         cerebro.adddata(data)  # Добавляем данные
 
@@ -264,6 +321,82 @@ if __name__ == '__main__':  # Точка входа при запуске это
     #     'EXPIRY_DATE': 'GTC'}  # Срок действия до отмены
     # rez = qpProvider.SendTransaction(transaction)["data"]
     # print(f'Новая стоп заявка отправлена на рынок: {rez}')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Функция получения позиций из Quik по всем бумагам класса classCode
+    classCode='TQBR'
+    limitKind = 2
+    show_log = False
+
+    positions_balance = {}
+    positions_entry_price = {}
+    tickers_in_position = []
+    positions_lastprice = {}
+    cost_positions_now = 0
+
+    # берем позиции по бумагам
+    depoLimits = qpProvider.GetAllDepoLimits()['data']  # Все лимиты по бумагам (позиции по инструментам)
+    # {'firmid': 'MC0061900000', 'openlimit': 0.0, 'currentlimit': 0.0, 'wa_position_price': 0.02011,
+    # 'currentbal': 20000.0, 'limit_kind': 2, 'locked_buy_value': 0.0, 'locked_sell': 0.0, 'openbal': 20000.0,
+    # 'locked_sell_value': 0.0, 'awg_position_price': 0.02011, 'locked_buy': 0.0, 'sec_code': 'VTBR',
+    # 'trdaccid': 'L01+00000F00', 'client_code': '593458R8NYF'}
+    accountDepoLimits = [depoLimit for depoLimit in depoLimits  # Бумажный лимит
+                         if depoLimit['client_code'] == clientCode and  # Выбираем по коду клиента
+                         depoLimit['firmid'] == firmId and  # Фирме
+                         depoLimit['limit_kind'] == limitKind and  # Дню лимита
+                         depoLimit['currentbal'] != 0]  # Берем только открытые позиции по фирме и дню
+    for firmKindDepoLimit in accountDepoLimits:  # Пробегаемся по всем позициям
+        secCode = firmKindDepoLimit["sec_code"]  # Код тикера
+        entryPrice = float(firmKindDepoLimit["wa_position_price"])
+        # classCode = qpProvider.GetSecurityClass(classCodes, secCode)['data']
+        lastPrice = float(qpProvider.GetParamEx(classCode, secCode, 'LAST')['data']['param_value'])  # Последняя цена сделки
+        # if classCode == 'TQOB':  # Для рынка облигаций
+        #     lastPrice *= 10  # Умножаем на 10
+        ticker = f"{classCode}.{secCode}"
+        # if show_log:
+        #     print(ticker, globals.f_decimal[ticker])
+        #     if not globals.f_decimal[ticker]:
+        #         print("None")
+        #         get_info_about_paper(qpProvider, {ticker: 0}, show_log=True)
+        #     print(f'- Позиция {classCode}.{secCode} {firmKindDepoLimit["currentbal"]} @ {entryPrice:.{globals.f_decimal[ticker]}f}/{lastPrice:.{globals.f_decimal[ticker]}f}')
+        positions_balance[ticker] = firmKindDepoLimit["currentbal"]
+        positions_entry_price[ticker] = entryPrice
+        tickers_in_position.append(ticker)
+        positions_lastprice[ticker] = lastPrice
+        cost_positions_now += positions_balance[ticker]*lastPrice
+
+    print(positions_balance, positions_entry_price, tickers_in_position, positions_lastprice, cost_positions_now)
+
+    # Заявки
+    orders = qpProvider.GetAllOrders()['data']  # Все заявки
+    firmOrders = [order for order in orders if order['firmid'] == firmId and order['flags'] & 0b1 == 0b1]  # Активные заявки по фирме
+    for firmOrder in firmOrders:  # Пробегаемся по всем заявка
+        isBuy = firmOrder['flags'] & 0b100 != 0b100  # Заявка на покупку
+        print(f'- Заявка номер {firmOrder["order_num"]} {"Покупка" if isBuy else "Продажа"} {firmOrder["class_code"]}.{firmOrder["sec_code"]} {firmOrder["qty"]} @ {firmOrder["price"]}')
+
+    # Стоп заявки
+    stopOrders = qpProvider.GetAllStopOrders()['data']  # Все стоп заявки
+    firmStopOrders = [stopOrder for stopOrder in stopOrders if stopOrder['firmid'] == firmId and stopOrder['flags'] & 0b1 == 0b1]  # Активные стоп заявки по фирме
+    for firmStopOrder in firmStopOrders:  # Пробегаемся по всем стоп заявкам
+        isBuy = firmStopOrder['flags'] & 0b100 != 0b100  # Заявка на покупку
+        print(f'- Стоп заявка номер {firmStopOrder["order_num"]} {"Покупка" if isBuy else "Продажа"} {firmStopOrder["class_code"]}.{firmStopOrder["sec_code"]} {firmStopOrder["qty"]} @ {firmStopOrder["price"]}')
+
+    #exit(1)
+
+
+
 
     # cerebro.addsizer(bt.sizers.FixedSize, stake=10000)  # Кол-во акций для покупки/продажи
     cerebro.run()  # Запуск торговой системы

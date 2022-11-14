@@ -196,6 +196,8 @@ class LimitCancel(bt.Strategy):
         print('OnTransReply')
         print(data['data'])  # Печатаем полученные данные
         print(type(data['data']))
+        _transaction_id = data['data']['order_num']
+        print(_transaction_id)
 
     def OnOrder(self, data):
         """Обработчик события получения новой / изменения существующей заявки"""
@@ -251,8 +253,8 @@ if __name__ == '__main__':  # Точка входа при запуске это
     # cerebro.broker.setcommission(commission=0.0015)
 
     # symbols = ('TQBR.SBER', 'TQBR.VTBR',)  # Кортеж тикеров
-    symbols = ('TQBR.SBER', )  # Кортеж тикеров
-    # symbols = ('TQBR.VTBR', )  # Кортеж тикеров
+    # symbols = ('TQBR.SBER', )  # Кортеж тикеров
+    symbols = ('TQBR.VTBR', )  # Кортеж тикеров
 
     all_lots = {}
     all_step = {}
@@ -281,11 +283,11 @@ if __name__ == '__main__':  # Точка входа при запуске это
     print("all_scale: ", all_scale)
 
     # Добавляем торговую систему с лимитным входом в n%
-    cerebro.addstrategy(LimitCancel, LimitPct=15, all_step=all_step, all_lots=all_lots, all_scale=all_scale)
+    cerebro.addstrategy(LimitCancel, LimitPct=0.01, all_step=all_step, all_lots=all_lots, all_scale=all_scale)
 
     for ticker in symbols:
-        data = store.getdata(dataname=ticker, timeframe=bt.TimeFrame.Minutes, compression=60,
-                             fromdate=datetime(2022, 11, 10), sessionstart=time(7, 0),
+        data = store.getdata(dataname=ticker, timeframe=bt.TimeFrame.Minutes, compression=1,
+                             fromdate=datetime(2022, 11, 14), sessionstart=time(7, 0),
                              LiveBars=True)  # Исторические и новые минутные бары за все время
         cerebro.adddata(data)  # Добавляем данные
 

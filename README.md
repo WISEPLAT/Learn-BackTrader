@@ -1,0 +1,1 @@
+Здесь выкладываю некие наработки по BackTrader, видосы по ним находятся здесь: [![[GitHub release](https://www.youtube.com/@wiseplat/streams)]]([https://github.com/rocksdanister/lively/releases](https://www.youtube.com/@wiseplat/streams)) 

@@ -36,6 +36,13 @@
 
 2-й коммит: Исправление: В коллекциях последних версий Python.Iterable -> collections.abc.Iterable - для работы с Python 3.11+
 
+## Star History
+
+Пожалуйста поставьте Звезду 🌟 этому коду
+
+[![Star History Chart](https://api.star-history.com/svg?repos=WISEPLAT/Learn-BackTrader&type=Timeline)](https://star-history.com/#WISEPLAT/Learn-BackTrader&Timeline)
+
+Please put a Star 🌟 for this code
 
 Why use BackTrader repo from WISEPLAT?
 ======================================
